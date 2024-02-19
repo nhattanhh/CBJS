@@ -155,7 +155,7 @@
 
         - We have nowhere to check the boolen like previous lesson, but we get the sleep trick:
         => look at this:
-                                test.zip -r /var/www/html/index.php 2>&1; if [ "$(cat /secret.txt | cut -c 1)" = "B" ]; then echo ""; else echo "zip error"; fi ; #
+                                test.zip -r /var/www/html/index.php 2>&1; if [ "$(cat /secret.txt | cut -c 1)" = "B" ]; then sleep 3ss; else sleep 1s; fi ; #
 
         => This is sleep trick, if your guess is correct, you will wait 3s, if wrong, it only by 1s.
   
