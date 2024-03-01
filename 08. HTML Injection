@@ -102,3 +102,36 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
        [LEVEL 5]-TARGET: http://localhost:13005
+
+       - In this level, you goal is steal document.cookie
+       - You can type an email and note for that email.
+
+       - Now, look at welcome.ejs:
+
+                   ...
+                   function setInfo(event) {
+                    event.preventDefault(); // 
+                    data = { "email": event.target.elements.email.value };
+                    fetch("/user", { // [?] make a POST request to the "/user" with the set data
+                        method: "post",
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data),
+                    }).then(() => {
+                        localStorage.setItem("info", "true");
+                        redirect(); // [?] Active redirect() function
+                    });
+                       }
+
+                    function redirect() {
+                           var url = new URL(window.location);
+                           var return_url = url.searchParams.get("return_url");
+                           window.location = return_url; 
+                       }
+
+                       var info = localStorage.getItem("info");
+                       if (info === "true") {
+                           redirect()
+                       }
+                ...
